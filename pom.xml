@@ -423,8 +423,11 @@
                                     <goal>sign</goal>
                                 </goals>
                                 <configuration>
-                                    <!-- Use Bouncy Castle for signing (no GPG binary needed) -->
-                                    <signer>bc</signer>
+                                    <!-- Use GPG agent for signing -->
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
                                 </configuration>
                             </execution>
                         </executions>
@@ -434,8 +437,8 @@
                         <artifactId>nexus-staging-maven-plugin</artifactId>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                            <serverId>central</serverId>
+                            <nexusUrl>https://central.sonatype.com/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         </configuration>
                     </plugin>
