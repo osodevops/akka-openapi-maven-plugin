@@ -43,6 +43,22 @@
         <url>https://github.com/osodevops/akka-openapi-maven-plugin/issues</url>
     </issueManagement>
 
+    <repositories>
+        <repository>
+            <id>akka-repository</id>
+            <name>Akka Repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>akka-repository</id>
+            <name>Akka Repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <modules>
         <module>akka-openapi-annotations</module>
         <module>akka-openapi-core</module>
