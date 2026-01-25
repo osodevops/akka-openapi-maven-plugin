@@ -48,15 +48,9 @@ jobs:
           mvn versions:set -DnewVersion=${{ steps.get-version.outputs.version }} --batch-mode
           mvn versions:commit --batch-mode
 
-      - name: Quick compile check
+      - name: Build and test
         run: |
-          mvn clean compile \
-            --batch-mode \
-            --no-transfer-progress
-
-      - name: Run tests
-        run: |
-          mvn test \
+          mvn clean verify \
             --batch-mode \
             --no-transfer-progress
 
