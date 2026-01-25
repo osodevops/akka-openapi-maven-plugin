@@ -146,7 +146,7 @@ jobs:
 
             ```xml
             <plugin>
-                <groupId>com.github.osodevops</groupId>
+                <groupId>sh.oso</groupId>
                 <artifactId>akka-openapi-maven-plugin</artifactId>
                 <version>${{ needs.validate.outputs.version }}</version>
                 <executions>
@@ -185,11 +185,11 @@ jobs:
           echo "- 2-3 hours: Searchable in Maven Central"
           echo ""
           echo "🔗 Maven Central URL (after sync):"
-          echo "https://search.maven.org/artifact/com.github.osodevops/akka-openapi-maven-plugin/${{ needs.validate.outputs.version }}"
+          echo "https://search.maven.org/artifact/sh.oso/akka-openapi-maven-plugin/${{ needs.validate.outputs.version }}"
           echo ""
           echo "📚 Usage:"
           echo "<plugin>"
-          echo "  <groupId>com.github.osodevops</groupId>"
+          echo "  <groupId>sh.oso</groupId>"
           echo "  <artifactId>akka-openapi-maven-plugin</artifactId>"
           echo "  <version>${{ needs.validate.outputs.version }}</version>"
           echo "</plugin>"

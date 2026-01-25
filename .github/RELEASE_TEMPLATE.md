@@ -27,7 +27,7 @@
 
 ```xml
 <plugin>
-    <groupId>com.github.osodevops</groupId>
+    <groupId>sh.oso</groupId>
     <artifactId>akka-openapi-maven-plugin</artifactId>
     <version>X.Y.Z</version>
     <executions>

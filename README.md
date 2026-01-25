@@ -1,6 +1,6 @@
 # Akka OpenAPI Maven Plugin
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.osodevops/akka-openapi-maven-plugin.svg)](https://search.maven.org/artifact/com.github.osodevops/akka-openapi-maven-plugin)
+[![Maven Central](https://img.shields.io/maven-central/v/sh.oso/akka-openapi-maven-plugin.svg)](https://search.maven.org/artifact/sh.oso/akka-openapi-maven-plugin)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build](https://github.com/osodevops/akka-openapi-maven-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/osodevops/akka-openapi-maven-plugin/actions/workflows/ci.yml)
 
@@ -23,7 +23,7 @@ Add the plugin to your `pom.xml`:
 <build>
     <plugins>
         <plugin>
-            <groupId>com.github.osodevops</groupId>
+            <groupId>sh.oso</groupId>
             <artifactId>akka-openapi-maven-plugin</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <executions>
@@ -151,7 +151,7 @@ components:
 
 ```xml
 <plugin>
-    <groupId>com.github.osodevops</groupId>
+    <groupId>sh.oso</groupId>
     <artifactId>akka-openapi-maven-plugin</artifactId>
     <version>1.0.0</version>
     <configuration>

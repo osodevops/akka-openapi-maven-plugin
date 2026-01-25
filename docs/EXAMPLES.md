@@ -10,7 +10,7 @@ A complete example of a RESTful CRUD endpoint:
 package com.example.api;
 
 import akka.javasdk.annotations.http.*;
-import com.github.osodevops.akka.openapi.annotations.*;
+import sh.oso.akka.openapi.annotations.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
@@ -363,7 +363,7 @@ package com.example.health;
 
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
-import com.github.osodevops.akka.openapi.annotations.*;
+import sh.oso.akka.openapi.annotations.*;
 
 /**
  * Health check endpoints for monitoring.

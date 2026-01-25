@@ -20,7 +20,7 @@ Add the plugin to your project's `pom.xml`:
 <build>
     <plugins>
         <plugin>
-            <groupId>com.github.osodevops</groupId>
+            <groupId>sh.oso</groupId>
             <artifactId>akka-openapi-maven-plugin</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <executions>
@@ -42,7 +42,7 @@ For enhanced documentation, add the annotations dependency:
 ```xml
 <dependencies>
     <dependency>
-        <groupId>com.github.osodevops</groupId>
+        <groupId>sh.oso</groupId>
         <artifactId>akka-openapi-annotations</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </dependency>
@@ -123,7 +123,7 @@ Configure API title, version, and description:
 
 ```xml
 <plugin>
-    <groupId>com.github.osodevops</groupId>
+    <groupId>sh.oso</groupId>
     <artifactId>akka-openapi-maven-plugin</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <configuration>
@@ -171,8 +171,8 @@ Define your API servers:
 Use the custom annotations for more control:
 
 ```java
-import com.github.osodevops.akka.openapi.annotations.OpenAPITag;
-import com.github.osodevops.akka.openapi.annotations.OpenAPIResponse;
+import sh.oso.akka.openapi.annotations.OpenAPITag;
+import sh.oso.akka.openapi.annotations.OpenAPIResponse;
 
 @HttpEndpoint("/customers")
 @OpenAPITag(name = "Customers", description = "Customer management operations")

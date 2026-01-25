@@ -6,7 +6,7 @@ This document describes all configuration options available for the Akka OpenAPI
 
 ```xml
 <plugin>
-    <groupId>com.github.osodevops</groupId>
+    <groupId>sh.oso</groupId>
     <artifactId>akka-openapi-maven-plugin</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <configuration>
@@ -181,7 +181,7 @@ Here's a complete configuration example:
 
 ```xml
 <plugin>
-    <groupId>com.github.osodevops</groupId>
+    <groupId>sh.oso</groupId>
     <artifactId>akka-openapi-maven-plugin</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <configuration>
@@ -250,7 +250,7 @@ Use Maven profiles for environment-specific configurations:
         <build>
             <plugins>
                 <plugin>
-                    <groupId>com.github.osodevops</groupId>
+                    <groupId>sh.oso</groupId>
                     <artifactId>akka-openapi-maven-plugin</artifactId>
                     <configuration>
                         <servers>
@@ -270,7 +270,7 @@ Use Maven profiles for environment-specific configurations:
         <build>
             <plugins>
                 <plugin>
-                    <groupId>com.github.osodevops</groupId>
+                    <groupId>sh.oso</groupId>
                     <artifactId>akka-openapi-maven-plugin</artifactId>
                     <configuration>
                         <servers>
