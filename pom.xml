@@ -64,7 +64,7 @@
         <classgraph.version>4.8.182</classgraph.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <jackson.version>2.18.2</jackson.version>
-        <snakeyaml.version>2.3</snakeyaml.version>
+        <snakeyaml.version>2.5</snakeyaml.version>
 
         <!-- Maven plugin versions -->
         <maven-plugin-api.version>3.9.9</maven-plugin-api.version>
