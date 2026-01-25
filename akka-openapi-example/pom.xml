@@ -23,10 +23,10 @@
             <artifactId>akka-openapi-annotations</artifactId>
         </dependency>
 
-        <!-- Akka SDK -->
+        <!-- Akka SDK shim (provides compatible annotations) -->
         <dependency>
-            <groupId>io.akka</groupId>
-            <artifactId>akka-javasdk</artifactId>
+            <groupId>com.github.osodevops</groupId>
+            <artifactId>akka-sdk-shim</artifactId>
         </dependency>
 
         <!-- Jackson for JSON serialization -->

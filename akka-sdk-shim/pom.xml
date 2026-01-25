@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.osodevops</groupId>
+        <artifactId>akka-openapi-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>akka-sdk-shim</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Akka SDK Shim</name>
+    <description>Compatibility shim providing Akka SDK annotation interfaces for compile-time use</description>
+
+    <!--
+        This module provides annotation interfaces compatible with the Akka SDK.
+        It allows projects to compile without access to the commercial Akka SDK.
+        At runtime, the actual Akka SDK annotations will be used when available.
+    -->
+</project>

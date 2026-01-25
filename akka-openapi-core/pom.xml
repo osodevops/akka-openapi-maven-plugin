@@ -83,12 +83,6 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
-        <!-- Akka SDK (for annotations reference) -->
-        <dependency>
-            <groupId>io.akka</groupId>
-            <artifactId>akka-javasdk</artifactId>
-        </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
