@@ -1,0 +1,58 @@
+version: 2
+updates:
+  # Maven dependencies
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/London"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "maven"
+    groups:
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
+      swagger:
+        patterns:
+          - "io.swagger*"
+      testing:
+        patterns:
+          - "org.junit*"
+          - "org.assertj*"
+          - "org.mockito*"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+      json-schema:
+        patterns:
+          - "com.github.victools:*"
+    ignore:
+      # Ignore major version updates for Akka SDK for stability
+      - dependency-name: "io.akka:akka-javasdk"
+        update-types: ["version-update:semver-major"]
+      # Ignore major version updates for ClassGraph
+      - dependency-name: "io.github.classgraph:classgraph"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/London"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"

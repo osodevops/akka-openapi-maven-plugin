@@ -1,0 +1,217 @@
+name: Release to Maven Central
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0). Leave empty to use tag version.'
+        required: false
+        type: string
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag or input
+        id: get-version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=${{ github.event.inputs.version }}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Releasing version: $VERSION"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Set version in POM
+        run: |
+          mvn versions:set -DnewVersion=${{ steps.get-version.outputs.version }} --batch-mode
+          mvn versions:commit --batch-mode
+
+      - name: Quick compile check
+        run: |
+          mvn clean compile \
+            --batch-mode \
+            --no-transfer-progress
+
+      - name: Run tests
+        run: |
+          mvn test \
+            --batch-mode \
+            --no-transfer-progress
+
+  build-and-sign:
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17 for publishing
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: Set version in POM
+        run: |
+          mvn versions:set -DnewVersion=${{ needs.validate.outputs.version }} --batch-mode
+          mvn versions:commit --batch-mode
+
+      - name: Build and sign artifacts
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: |
+          mvn clean verify \
+            --batch-mode \
+            --no-transfer-progress \
+            -Prelease \
+            -DskipTests
+
+      - name: Deploy to Maven Central
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: |
+          mvn deploy \
+            --batch-mode \
+            --no-transfer-progress \
+            -Prelease \
+            -DskipTests
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-artifacts
+          path: |
+            **/target/*.jar
+            **/target/*.pom
+            !**/target/*-sources.jar
+            !**/target/*-javadoc.jar
+
+  create-release:
+    needs: [ validate, build-and-sign ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-artifacts
+          path: artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.validate.outputs.version }}
+          name: Release v${{ needs.validate.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(needs.validate.outputs.version, '-') }}
+          generate_release_notes: true
+          body: |
+            ## Akka OpenAPI Maven Plugin v${{ needs.validate.outputs.version }}
+
+            ### Installation
+
+            Add to your `pom.xml`:
+
+            ```xml
+            <plugin>
+                <groupId>com.github.osodevops</groupId>
+                <artifactId>akka-openapi-maven-plugin</artifactId>
+                <version>${{ needs.validate.outputs.version }}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            ```
+
+            ### Changes
+
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+
+            ---
+            🤖 Generated with GitHub Actions
+          files: |
+            artifacts/**/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        run: |
+          echo "✅ Release v${{ needs.validate.outputs.version }} published!"
+          echo ""
+          echo "🎯 Release Checklist:"
+          echo "- ✅ Code signed with GPG"
+          echo "- ✅ Deployed to Maven Central Staging"
+          echo "- ✅ GitHub Release created"
+          echo ""
+          echo "📦 Maven Central Sync Timeline:"
+          echo "- Immediate: Available in staging repository"
+          echo "- 10-30 min: Synced to Maven Central"
+          echo "- 2-3 hours: Searchable in Maven Central"
+          echo ""
+          echo "🔗 Maven Central URL (after sync):"
+          echo "https://search.maven.org/artifact/com.github.osodevops/akka-openapi-maven-plugin/${{ needs.validate.outputs.version }}"
+          echo ""
+          echo "📚 Usage:"
+          echo "<plugin>"
+          echo "  <groupId>com.github.osodevops</groupId>"
+          echo "  <artifactId>akka-openapi-maven-plugin</artifactId>"
+          echo "  <version>${{ needs.validate.outputs.version }}</version>"
+          echo "</plugin>"
+
+  notify:
+    needs: [ validate, create-release ]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Send Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK != '' }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: "akka-openapi-maven-plugin v${{ needs.validate.outputs.version }} release ${{ job.status == 'success' && 'succeeded' || 'failed' }}!"
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        continue-on-error: true

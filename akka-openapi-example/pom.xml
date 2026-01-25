@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.osodevops</groupId>
+        <artifactId>akka-openapi-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>akka-openapi-example</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Akka OpenAPI Example</name>
+    <description>Example project demonstrating the Akka OpenAPI Maven Plugin</description>
+
+    <dependencies>
+        <!-- Project annotations for OpenAPI documentation -->
+        <dependency>
+            <groupId>com.github.osodevops</groupId>
+            <artifactId>akka-openapi-annotations</artifactId>
+        </dependency>
+
+        <!-- Akka SDK -->
+        <dependency>
+            <groupId>io.akka</groupId>
+            <artifactId>akka-javasdk</artifactId>
+        </dependency>
+
+        <!-- Jackson for JSON serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!-- Jakarta validation for constraint annotations -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.osodevops</groupId>
+                <artifactId>akka-openapi-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <!-- API Information -->
+                    <apiTitle>Akka OpenAPI Example API</apiTitle>
+                    <apiVersion>1.0.0</apiVersion>
+                    <apiDescription>Example API demonstrating OpenAPI generation from Akka SDK endpoints</apiDescription>
+
+                    <!-- Contact Information -->
+                    <contactName>API Support</contactName>
+                    <contactEmail>support@example.com</contactEmail>
+                    <contactUrl>https://example.com/support</contactUrl>
+
+                    <!-- License Information -->
+                    <licenseName>Apache License, Version 2.0</licenseName>
+                    <licenseUrl>https://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+
+                    <!-- Terms of Service -->
+                    <termsOfService>https://example.com/terms</termsOfService>
+
+                    <!-- Package Scanning -->
+                    <scanPackages>
+                        <package>com.example</package>
+                    </scanPackages>
+
+                    <!-- Server Definitions -->
+                    <servers>
+                        <server>
+                            <url>https://api.example.com</url>
+                            <description>Production</description>
+                        </server>
+                        <server>
+                            <url>https://api-staging.example.com</url>
+                            <description>Staging</description>
+                        </server>
+                        <server>
+                            <url>http://localhost:8080</url>
+                            <description>Local Development</description>
+                        </server>
+                    </servers>
+
+                    <!-- Output Configuration -->
+                    <outputFormat>yaml</outputFormat>
+                    <failOnValidationError>true</failOnValidationError>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
