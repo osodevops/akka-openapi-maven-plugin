@@ -17,6 +17,7 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.tags.Tag;
 
 import java.util.*;
@@ -82,28 +83,39 @@ public class OpenAPIModelBuilder {
         OpenAPI openAPI = new OpenAPI();
         openAPI.setOpenapi(OPENAPI_VERSION);
 
-        // Build Info section
-        openAPI.setInfo(buildInfo());
-
-        // Build Servers section
-        if (!config.getServers().isEmpty()) {
-            openAPI.setServers(buildServers());
-        }
-
-        // Build Paths and collect tags
+        // Collect annotation metadata from all endpoints (first @OpenAPIInfo wins)
+        InfoMetadata annotationInfo = null;
+        List<ServerMetadata> annotationServers = new ArrayList<>();
         Paths paths = new Paths();
         Set<String> allTags = new LinkedHashSet<>();
+        Map<String, TagMetadata> tagMetadataMap = new LinkedHashMap<>();
 
         for (EndpointMetadata endpoint : endpoints) {
             allTags.addAll(endpoint.getTags());
+            for (TagMetadata tm : endpoint.getTagMetadata()) {
+                tagMetadataMap.put(tm.getName(), tm);
+            }
+            if (annotationInfo == null && endpoint.getInfoMetadata() != null) {
+                annotationInfo = endpoint.getInfoMetadata();
+            }
+            annotationServers.addAll(endpoint.getServerMetadata());
             addEndpointPaths(paths, endpoint);
+        }
+
+        // Build Info section (annotation values override config when non-empty)
+        openAPI.setInfo(buildInfo(annotationInfo));
+
+        // Build Servers section (annotation servers supplement config servers)
+        List<Server> servers = buildServers(annotationServers);
+        if (!servers.isEmpty()) {
+            openAPI.setServers(servers);
         }
 
         openAPI.setPaths(paths);
 
         // Build Tags section
         if (!allTags.isEmpty()) {
-            openAPI.setTags(buildTags(allTags));
+            openAPI.setTags(buildTags(allTags, tagMetadataMap));
         }
 
         // Build Components section with schemas
@@ -122,57 +134,113 @@ public class OpenAPIModelBuilder {
         return openAPI;
     }
 
-    private Info buildInfo() {
+    /**
+     * Builds the Info section. Annotation values override config values when non-empty.
+     */
+    private Info buildInfo(InfoMetadata annotationInfo) {
         Info info = new Info();
-        info.setTitle(config.getApiTitle());
-        info.setVersion(config.getApiVersion());
 
-        if (config.getApiDescription() != null && !config.getApiDescription().isEmpty()) {
-            info.setDescription(config.getApiDescription());
+        // Use annotation value if non-empty, otherwise fall back to config
+        info.setTitle(overrideIfPresent(config.getApiTitle(), annotationInfo, InfoMetadata::getTitle));
+        info.setVersion(overrideIfPresent(config.getApiVersion(), annotationInfo, InfoMetadata::getVersion));
+
+        String description = overrideIfPresent(config.getApiDescription(), annotationInfo, InfoMetadata::getDescription);
+        if (description != null && !description.isEmpty()) {
+            info.setDescription(description);
         }
 
-        if (config.getContactName() != null || config.getContactEmail() != null ||
-            config.getContactUrl() != null) {
+        String contactName = overrideIfPresent(config.getContactName(), annotationInfo, InfoMetadata::getContactName);
+        String contactEmail = overrideIfPresent(config.getContactEmail(), annotationInfo, InfoMetadata::getContactEmail);
+        String contactUrl = overrideIfPresent(config.getContactUrl(), annotationInfo, InfoMetadata::getContactUrl);
+
+        if (contactName != null || contactEmail != null || contactUrl != null) {
             Contact contact = new Contact();
-            contact.setName(config.getContactName());
-            contact.setEmail(config.getContactEmail());
-            contact.setUrl(config.getContactUrl());
+            contact.setName(contactName);
+            contact.setEmail(contactEmail);
+            contact.setUrl(contactUrl);
             info.setContact(contact);
         }
 
-        if (config.getLicenseName() != null) {
+        String licenseName = overrideIfPresent(config.getLicenseName(), annotationInfo, InfoMetadata::getLicenseName);
+        String licenseUrl = overrideIfPresent(config.getLicenseUrl(), annotationInfo, InfoMetadata::getLicenseUrl);
+
+        if (licenseName != null) {
             License license = new License();
-            license.setName(config.getLicenseName());
-            license.setUrl(config.getLicenseUrl());
+            license.setName(licenseName);
+            license.setUrl(licenseUrl);
             info.setLicense(license);
         }
 
-        if (config.getTermsOfService() != null) {
-            info.setTermsOfService(config.getTermsOfService());
+        String termsOfService = overrideIfPresent(config.getTermsOfService(), annotationInfo, InfoMetadata::getTermsOfService);
+        if (termsOfService != null) {
+            info.setTermsOfService(termsOfService);
         }
 
         return info;
     }
 
-    private List<Server> buildServers() {
-        return config.getServers().stream()
-            .map(this::buildServer)
-            .collect(Collectors.toList());
+    /**
+     * Returns the annotation value if present and non-empty, otherwise the config value.
+     */
+    private String overrideIfPresent(String configValue, InfoMetadata annotationInfo,
+                                      java.util.function.Function<InfoMetadata, String> getter) {
+        if (annotationInfo != null) {
+            String annotationValue = getter.apply(annotationInfo);
+            if (annotationValue != null && !annotationValue.isEmpty()) {
+                return annotationValue;
+            }
+        }
+        return configValue;
     }
 
-    private Server buildServer(ServerConfig serverConfig) {
-        Server server = new Server();
-        server.setUrl(serverConfig.getUrl());
-        server.setDescription(serverConfig.getDescription());
-        return server;
+    /**
+     * Builds the Servers section. Annotation servers are added after config servers.
+     * Duplicate URLs are deduplicated (annotation takes precedence for description).
+     */
+    private List<Server> buildServers(List<ServerMetadata> annotationServers) {
+        Map<String, Server> serverMap = new LinkedHashMap<>();
+
+        // Add config servers first
+        for (ServerConfig sc : config.getServers()) {
+            Server server = new Server();
+            server.setUrl(sc.getUrl());
+            server.setDescription(sc.getDescription());
+            serverMap.put(sc.getUrl(), server);
+        }
+
+        // Add/override with annotation servers
+        for (ServerMetadata sm : annotationServers) {
+            Server server = new Server();
+            server.setUrl(sm.getUrl());
+            if (!sm.getDescription().isEmpty()) {
+                server.setDescription(sm.getDescription());
+            }
+            serverMap.put(sm.getUrl(), server);
+        }
+
+        return new ArrayList<>(serverMap.values());
     }
 
-    private List<Tag> buildTags(Set<String> tagNames) {
+    private List<Tag> buildTags(Set<String> tagNames, Map<String, TagMetadata> tagMetadataMap) {
         return tagNames.stream()
             .sorted()
             .map(name -> {
                 Tag tag = new Tag();
                 tag.setName(name);
+                TagMetadata metadata = tagMetadataMap.get(name);
+                if (metadata != null) {
+                    if (!metadata.getDescription().isEmpty()) {
+                        tag.setDescription(metadata.getDescription());
+                    }
+                    if (!metadata.getExternalDocsUrl().isEmpty()) {
+                        ExternalDocumentation externalDocs = new ExternalDocumentation();
+                        externalDocs.setUrl(metadata.getExternalDocsUrl());
+                        if (!metadata.getExternalDocsDescription().isEmpty()) {
+                            externalDocs.setDescription(metadata.getExternalDocsDescription());
+                        }
+                        tag.setExternalDocs(externalDocs);
+                    }
+                }
                 return tag;
             })
             .collect(Collectors.toList());

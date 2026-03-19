@@ -1,5 +1,6 @@
 package com.github.osodevops.akka.openapi.core;
 
+import com.github.osodevops.akka.openapi.annotations.*;
 import com.github.osodevops.akka.openapi.core.model.*;
 import com.github.osodevops.akka.openapi.core.model.OperationMetadata.HttpMethod;
 import com.github.osodevops.akka.openapi.core.model.ParameterMetadata.ParameterLocation;
@@ -97,16 +98,53 @@ public class AkkaAnnotationExtractor {
             }
         }
 
-        // Generate tag from class name
-        String tag = generateTag(endpointClass);
-
-        return EndpointMetadata.builder()
+        // Extract tag from @OpenAPITag annotation or generate from class name
+        EndpointMetadata.Builder builder = EndpointMetadata.builder()
             .className(endpointClass.getName())
             .basePath(basePath)
-            .description("")  // Would need source parsing for JavaDoc
-            .addTag(tag)
-            .operations(operations)
-            .build();
+            .description("")
+            .operations(operations);
+
+        // Extract @OpenAPITag
+        OpenAPITag tagAnnotation = endpointClass.getAnnotation(OpenAPITag.class);
+        if (tagAnnotation != null) {
+            builder.addTag(tagAnnotation.name());
+            builder.addTagMetadata(new TagMetadata(
+                tagAnnotation.name(),
+                tagAnnotation.description(),
+                tagAnnotation.externalDocsUrl(),
+                tagAnnotation.externalDocsDescription()
+            ));
+            logger.accept("Found @OpenAPITag: " + tagAnnotation.name());
+        } else {
+            builder.addTag(generateTag(endpointClass));
+        }
+
+        // Extract @OpenAPIInfo
+        OpenAPIInfo infoAnnotation = endpointClass.getAnnotation(OpenAPIInfo.class);
+        if (infoAnnotation != null) {
+            builder.infoMetadata(InfoMetadata.builder()
+                .title(infoAnnotation.title())
+                .version(infoAnnotation.version())
+                .description(infoAnnotation.description())
+                .termsOfService(infoAnnotation.termsOfService())
+                .contactName(infoAnnotation.contactName())
+                .contactEmail(infoAnnotation.contactEmail())
+                .contactUrl(infoAnnotation.contactUrl())
+                .licenseName(infoAnnotation.licenseName())
+                .licenseUrl(infoAnnotation.licenseUrl())
+                .build());
+            logger.accept("Found @OpenAPIInfo on: " + endpointClass.getSimpleName());
+        }
+
+        // Extract @OpenAPIServer(s)
+        OpenAPIServer[] serverAnnotations = endpointClass.getAnnotationsByType(OpenAPIServer.class);
+        for (OpenAPIServer serverAnn : serverAnnotations) {
+            builder.addServerMetadata(new ServerMetadata(serverAnn.url(), serverAnn.description()));
+            logger.accept("Found @OpenAPIServer: " + serverAnn.url());
+        }
+
+        return builder.build();
     }
 
     /**
@@ -199,8 +237,23 @@ public class AkkaAnnotationExtractor {
             }
         }
 
-        // Build responses
+        // Build responses: start with inferred, then merge @OpenAPIResponse annotations
         Map<String, ResponseMetadata> responses = inferResponses(method, httpMethod);
+        mergeAnnotatedResponses(responses, method);
+
+        // Extract @OpenAPIExample annotations for request body
+        if (requestBody != null) {
+            OpenAPIExample[] examples = method.getAnnotationsByType(OpenAPIExample.class);
+            if (examples.length > 0) {
+                requestBody = RequestBodyMetadata.builder()
+                    .javaType(requestBody.getJavaType())
+                    .required(requestBody.isRequired())
+                    .description(requestBody.getDescription())
+                    .example(examples[0].value())
+                    .build();
+                logger.accept("Found " + examples.length + " @OpenAPIExample annotations on " + method.getName());
+            }
+        }
 
         // Generate operation ID
         String operationId = method.getName();
@@ -210,7 +263,7 @@ public class AkkaAnnotationExtractor {
             .httpMethod(httpMethod)
             .path(operationPath)
             .operationId(operationId)
-            .summary("")  // Would need source parsing for JavaDoc
+            .summary("")
             .description("")
             .parameters(parameters)
             .requestBody(requestBody)
@@ -280,6 +333,42 @@ public class AkkaAnnotationExtractor {
         }
 
         return responses;
+    }
+
+    /**
+     * Merges @OpenAPIResponse annotations into the inferred responses map.
+     * Annotation values override inferred values for matching status codes,
+     * and new status codes are added.
+     */
+    private void mergeAnnotatedResponses(Map<String, ResponseMetadata> responses, Method method) {
+        OpenAPIResponse[] annotations = method.getAnnotationsByType(OpenAPIResponse.class);
+        if (annotations.length == 0) {
+            return;
+        }
+
+        logger.accept("Found " + annotations.length + " @OpenAPIResponse annotations on " + method.getName());
+
+        for (OpenAPIResponse ann : annotations) {
+            String statusCode = ann.status();
+            Type responseType = ann.responseType().equals(Void.class) ? null : ann.responseType();
+
+            // If we're overriding an existing inferred response and no explicit type given,
+            // preserve the inferred response type
+            if (responseType == null && responses.containsKey(statusCode)) {
+                responseType = responses.get(statusCode).getResponseType();
+            }
+
+            ResponseMetadata.Builder builder = ResponseMetadata.builder()
+                .statusCode(statusCode)
+                .description(ann.description())
+                .mediaType(ann.mediaType());
+
+            if (responseType != null) {
+                builder.responseType(responseType);
+            }
+
+            responses.put(statusCode, builder.build());
+        }
     }
 
     /**

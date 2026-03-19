@@ -19,16 +19,22 @@ public final class EndpointMetadata {
     private final String basePath;
     private final String description;
     private final List<String> tags;
+    private final List<TagMetadata> tagMetadata;
     private final List<OperationMetadata> operations;
     private final SecurityMetadata security;
+    private final InfoMetadata infoMetadata;
+    private final List<ServerMetadata> serverMetadata;
 
     private EndpointMetadata(Builder builder) {
         this.className = Objects.requireNonNull(builder.className, "className must not be null");
         this.basePath = Objects.requireNonNull(builder.basePath, "basePath must not be null");
         this.description = builder.description != null ? builder.description : "";
         this.tags = Collections.unmodifiableList(new ArrayList<>(builder.tags));
+        this.tagMetadata = Collections.unmodifiableList(new ArrayList<>(builder.tagMetadata));
         this.operations = Collections.unmodifiableList(new ArrayList<>(builder.operations));
         this.security = builder.security;
+        this.infoMetadata = builder.infoMetadata;
+        this.serverMetadata = Collections.unmodifiableList(new ArrayList<>(builder.serverMetadata));
     }
 
     /**
@@ -87,6 +93,15 @@ public final class EndpointMetadata {
     }
 
     /**
+     * Gets detailed tag metadata including descriptions and external docs.
+     *
+     * @return an unmodifiable list of tag metadata
+     */
+    public List<TagMetadata> getTagMetadata() {
+        return tagMetadata;
+    }
+
+    /**
      * Gets all operations defined in this endpoint.
      *
      * @return an unmodifiable list of operations
@@ -102,6 +117,24 @@ public final class EndpointMetadata {
      */
     public SecurityMetadata getSecurity() {
         return security;
+    }
+
+    /**
+     * Gets the API info metadata from @OpenAPIInfo annotation.
+     *
+     * @return the info metadata, or null if not annotated
+     */
+    public InfoMetadata getInfoMetadata() {
+        return infoMetadata;
+    }
+
+    /**
+     * Gets the server metadata from @OpenAPIServer annotations.
+     *
+     * @return an unmodifiable list of server metadata
+     */
+    public List<ServerMetadata> getServerMetadata() {
+        return serverMetadata;
     }
 
     /**
@@ -122,13 +155,14 @@ public final class EndpointMetadata {
                Objects.equals(basePath, that.basePath) &&
                Objects.equals(description, that.description) &&
                Objects.equals(tags, that.tags) &&
+               Objects.equals(tagMetadata, that.tagMetadata) &&
                Objects.equals(operations, that.operations) &&
                Objects.equals(security, that.security);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(className, basePath, description, tags, operations, security);
+        return Objects.hash(className, basePath, description, tags, tagMetadata, operations, security);
     }
 
     @Override
@@ -149,8 +183,11 @@ public final class EndpointMetadata {
         private String basePath;
         private String description;
         private List<String> tags = new ArrayList<>();
+        private List<TagMetadata> tagMetadata = new ArrayList<>();
         private List<OperationMetadata> operations = new ArrayList<>();
         private SecurityMetadata security;
+        private InfoMetadata infoMetadata;
+        private List<ServerMetadata> serverMetadata = new ArrayList<>();
 
         private Builder() {
         }
@@ -182,6 +219,18 @@ public final class EndpointMetadata {
             return this;
         }
 
+        public Builder tagMetadata(List<TagMetadata> tagMetadata) {
+            this.tagMetadata = tagMetadata != null ? new ArrayList<>(tagMetadata) : new ArrayList<>();
+            return this;
+        }
+
+        public Builder addTagMetadata(TagMetadata metadata) {
+            if (metadata != null) {
+                this.tagMetadata.add(metadata);
+            }
+            return this;
+        }
+
         public Builder operations(List<OperationMetadata> operations) {
             this.operations = operations != null ? new ArrayList<>(operations) : new ArrayList<>();
             return this;
@@ -196,6 +245,23 @@ public final class EndpointMetadata {
 
         public Builder security(SecurityMetadata security) {
             this.security = security;
+            return this;
+        }
+
+        public Builder infoMetadata(InfoMetadata infoMetadata) {
+            this.infoMetadata = infoMetadata;
+            return this;
+        }
+
+        public Builder serverMetadata(List<ServerMetadata> serverMetadata) {
+            this.serverMetadata = serverMetadata != null ? new ArrayList<>(serverMetadata) : new ArrayList<>();
+            return this;
+        }
+
+        public Builder addServerMetadata(ServerMetadata server) {
+            if (server != null) {
+                this.serverMetadata.add(server);
+            }
             return this;
         }
 
