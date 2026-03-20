@@ -5,6 +5,8 @@ import com.github.osodevops.akka.openapi.core.config.ServerConfig;
 import com.github.osodevops.akka.openapi.core.fixtures.CustomerDto;
 import com.github.osodevops.akka.openapi.core.fixtures.CreateCustomerRequest;
 import com.github.osodevops.akka.openapi.core.model.*;
+import com.github.osodevops.akka.openapi.core.model.InfoMetadata;
+import com.github.osodevops.akka.openapi.core.model.ServerMetadata;
 import com.github.osodevops.akka.openapi.core.model.OperationMetadata.HttpMethod;
 import com.github.osodevops.akka.openapi.core.model.ParameterMetadata.ParameterLocation;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -451,6 +453,253 @@ class OpenAPIModelBuilderTest {
 
         Operation operation = openAPI.getPaths().get("/customers/{id}").getGet();
         assertThat(operation.getOperationId()).isEqualTo("getCustomerById");
+    }
+
+    @Test
+    void shouldBuildTagsWithDescriptionFromTagMetadata() {
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .addTag("Customers")
+            .addTagMetadata(new TagMetadata(
+                "Customers", "Customer management operations",
+                "https://docs.example.com/customers", "Customer API Guide"))
+            .addOperation(OperationMetadata.builder()
+                .methodName("getCustomer")
+                .httpMethod(HttpMethod.GET)
+                .path("/{id}")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("200")
+                    .description("Success")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        assertThat(openAPI.getTags()).hasSize(1);
+        assertThat(openAPI.getTags().get(0).getName()).isEqualTo("Customers");
+        assertThat(openAPI.getTags().get(0).getDescription()).isEqualTo("Customer management operations");
+        assertThat(openAPI.getTags().get(0).getExternalDocs()).isNotNull();
+        assertThat(openAPI.getTags().get(0).getExternalDocs().getUrl()).isEqualTo("https://docs.example.com/customers");
+        assertThat(openAPI.getTags().get(0).getExternalDocs().getDescription()).isEqualTo("Customer API Guide");
+    }
+
+    @Test
+    void shouldBuildTagsWithoutMetadataWhenNotProvided() {
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .addTag("Customer")
+            .addOperation(OperationMetadata.builder()
+                .methodName("getCustomer")
+                .httpMethod(HttpMethod.GET)
+                .path("/{id}")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("200")
+                    .description("Success")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        assertThat(openAPI.getTags()).hasSize(1);
+        assertThat(openAPI.getTags().get(0).getName()).isEqualTo("Customer");
+        assertThat(openAPI.getTags().get(0).getDescription()).isNull();
+        assertThat(openAPI.getTags().get(0).getExternalDocs()).isNull();
+    }
+
+    @Test
+    void shouldOverrideInfoFromAnnotation() {
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .infoMetadata(InfoMetadata.builder()
+                .title("Annotation Title")
+                .version("3.0.0")
+                .description("From annotation")
+                .contactName("Ann Contact")
+                .contactEmail("ann@example.com")
+                .licenseName("MIT")
+                .build())
+            .addOperation(OperationMetadata.builder()
+                .methodName("get")
+                .httpMethod(HttpMethod.GET)
+                .path("")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("200")
+                    .description("OK")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        assertThat(openAPI.getInfo().getTitle()).isEqualTo("Annotation Title");
+        assertThat(openAPI.getInfo().getVersion()).isEqualTo("3.0.0");
+        assertThat(openAPI.getInfo().getDescription()).isEqualTo("From annotation");
+        assertThat(openAPI.getInfo().getContact().getName()).isEqualTo("Ann Contact");
+        assertThat(openAPI.getInfo().getLicense().getName()).isEqualTo("MIT");
+    }
+
+    @Test
+    void shouldFallBackToConfigWhenAnnotationFieldsEmpty() {
+        // Config has title "Test API", version "1.0.0"
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .infoMetadata(InfoMetadata.builder()
+                .title("") // empty — should fall back to config
+                .version("") // empty — should fall back to config
+                .build())
+            .addOperation(OperationMetadata.builder()
+                .methodName("get")
+                .httpMethod(HttpMethod.GET)
+                .path("")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("200")
+                    .description("OK")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        assertThat(openAPI.getInfo().getTitle()).isEqualTo("Test API");
+        assertThat(openAPI.getInfo().getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void shouldMergeAnnotationServersWithConfigServers() {
+        ServerConfig configServer = ServerConfig.builder()
+            .url("https://config.example.com")
+            .description("Config server")
+            .build();
+
+        config = PluginConfiguration.builder()
+            .apiTitle("Test API")
+            .apiVersion("1.0.0")
+            .addServer(configServer)
+            .build();
+        builder = new OpenAPIModelBuilder(config, logMessages::add);
+
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .addServerMetadata(new ServerMetadata("https://annotation.example.com", "Annotation server"))
+            .addOperation(OperationMetadata.builder()
+                .methodName("get")
+                .httpMethod(HttpMethod.GET)
+                .path("")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("200")
+                    .description("OK")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        assertThat(openAPI.getServers()).hasSize(2);
+        assertThat(openAPI.getServers().get(0).getUrl()).isEqualTo("https://config.example.com");
+        assertThat(openAPI.getServers().get(1).getUrl()).isEqualTo("https://annotation.example.com");
+    }
+
+    @Test
+    void shouldDeduplicateServersByUrl() {
+        ServerConfig configServer = ServerConfig.builder()
+            .url("https://api.example.com")
+            .description("Config description")
+            .build();
+
+        config = PluginConfiguration.builder()
+            .apiTitle("Test API")
+            .apiVersion("1.0.0")
+            .addServer(configServer)
+            .build();
+        builder = new OpenAPIModelBuilder(config, logMessages::add);
+
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .addServerMetadata(new ServerMetadata("https://api.example.com", "Annotation description"))
+            .addOperation(OperationMetadata.builder()
+                .methodName("get")
+                .httpMethod(HttpMethod.GET)
+                .path("")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("200")
+                    .description("OK")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        // Same URL should be deduplicated, annotation takes precedence
+        assertThat(openAPI.getServers()).hasSize(1);
+        assertThat(openAPI.getServers().get(0).getUrl()).isEqualTo("https://api.example.com");
+        assertThat(openAPI.getServers().get(0).getDescription()).isEqualTo("Annotation description");
+    }
+
+    @Test
+    void shouldAddAnnotationServersWhenNoConfigServers() {
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .addServerMetadata(new ServerMetadata("https://api.example.com", "Production"))
+            .addServerMetadata(new ServerMetadata("https://staging.example.com", "Staging"))
+            .addOperation(OperationMetadata.builder()
+                .methodName("get")
+                .httpMethod(HttpMethod.GET)
+                .path("")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("200")
+                    .description("OK")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        assertThat(openAPI.getServers()).hasSize(2);
+        assertThat(openAPI.getServers().get(0).getUrl()).isEqualTo("https://api.example.com");
+        assertThat(openAPI.getServers().get(1).getUrl()).isEqualTo("https://staging.example.com");
+    }
+
+    @Test
+    void shouldIncludeAnnotatedResponses() {
+        EndpointMetadata endpoint = EndpointMetadata.builder()
+            .className("CustomerEndpoint")
+            .basePath("/customers")
+            .addOperation(OperationMetadata.builder()
+                .methodName("createCustomer")
+                .httpMethod(HttpMethod.POST)
+                .path("")
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("201")
+                    .description("Customer created successfully")
+                    .responseType(CustomerDto.class)
+                    .build())
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("400")
+                    .description("Invalid request data")
+                    .build())
+                .addResponse(ResponseMetadata.builder()
+                    .statusCode("409")
+                    .description("Customer with this email already exists")
+                    .build())
+                .build())
+            .build();
+
+        OpenAPI openAPI = builder.build(List.of(endpoint));
+
+        Operation operation = openAPI.getPaths().get("/customers").getPost();
+        assertThat(operation.getResponses()).hasSize(3);
+        assertThat(operation.getResponses().get("201").getDescription()).isEqualTo("Customer created successfully");
+        assertThat(operation.getResponses().get("400").getDescription()).isEqualTo("Invalid request data");
+        assertThat(operation.getResponses().get("409").getDescription()).isEqualTo("Customer with this email already exists");
     }
 
     @Test
