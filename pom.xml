@@ -60,8 +60,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- Dependency versions -->
-        <swagger-core.version>2.2.25</swagger-core.version>
-        <swagger-parser.version>2.1.22</swagger-parser.version>
+        <swagger-core.version>2.2.45</swagger-core.version>
+        <swagger-parser.version>2.1.39</swagger-parser.version>
         <classgraph.version>4.8.182</classgraph.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <jackson.version>2.18.2</jackson.version>
