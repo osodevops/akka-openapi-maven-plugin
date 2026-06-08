@@ -138,7 +138,7 @@ jobs:
             --no-transfer-progress
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: |
             **/target/site/jacoco/jacoco.xml
