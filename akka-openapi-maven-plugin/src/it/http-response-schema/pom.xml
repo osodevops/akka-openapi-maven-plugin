@@ -4,7 +4,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>http-response-schema-it</artifactId>
-    <version>1.5.3-SNAPSHOT</version>
+    <version>1.5.3</version>
     <packaging>jar</packaging>
 
     <name>HTTP Response Schema Invoker Test</name>

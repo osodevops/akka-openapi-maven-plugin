@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3](https://github.com/osodevops/akka-openapi-maven-plugin/compare/v1.5.2...v1.5.3) (2026-06-22)
+
+
+### Dependencies
+
+* **deps-dev:** bump com.github.spotbugs:spotbugs-maven-plugin ([#57](https://github.com/osodevops/akka-openapi-maven-plugin/issues/57)) ([9b06a8e](https://github.com/osodevops/akka-openapi-maven-plugin/commit/9b06a8eb83ab1bfe986d595bff74f3bde4d570e5))
+* **deps-dev:** bump org.codehaus.mojo:versions-maven-plugin ([#56](https://github.com/osodevops/akka-openapi-maven-plugin/issues/56)) ([c9a3119](https://github.com/osodevops/akka-openapi-maven-plugin/commit/c9a31196af3f21bd3c12495dec8bc4001f4458d8))
+* **deps:** bump org.apache.maven:maven-core from 3.9.12 to 3.9.16 ([#70](https://github.com/osodevops/akka-openapi-maven-plugin/issues/70)) ([fd8d221](https://github.com/osodevops/akka-openapi-maven-plugin/commit/fd8d22171cca6f919f6235200283a19c3322a6e6))
+* **deps:** bump org.apache.maven:maven-plugin-api from 3.9.12 to 3.9.16 ([#69](https://github.com/osodevops/akka-openapi-maven-plugin/issues/69)) ([d812fa7](https://github.com/osodevops/akka-openapi-maven-plugin/commit/d812fa733e6d4a89a0567a3349e4940a1afc6483))
+* **deps:** bump org.apache.maven.plugin-tools:maven-plugin-annotations ([#55](https://github.com/osodevops/akka-openapi-maven-plugin/issues/55)) ([a0a59bb](https://github.com/osodevops/akka-openapi-maven-plugin/commit/a0a59bbf9a1e20bd9f5ae1fcd89e91f9e806d19f))
+* **deps:** bump org.yaml:snakeyaml from 2.5 to 2.6 ([#54](https://github.com/osodevops/akka-openapi-maven-plugin/issues/54)) ([bdf4ec6](https://github.com/osodevops/akka-openapi-maven-plugin/commit/bdf4ec637c7d23a33806018dc96c9203256d27a0))
+* **deps:** bump the maven-plugins group across 1 directory with 3 updates ([#63](https://github.com/osodevops/akka-openapi-maven-plugin/issues/63)) ([40b6f74](https://github.com/osodevops/akka-openapi-maven-plugin/commit/40b6f743bc58717e99ec009245bd1fae8550abc3))
+* **deps:** bump the swagger group across 1 directory with 3 updates ([#49](https://github.com/osodevops/akka-openapi-maven-plugin/issues/49)) ([6abbeab](https://github.com/osodevops/akka-openapi-maven-plugin/commit/6abbeab0101ba7d535713be519b7ebdfb6067c21))
+
 ## [1.5.2](https://github.com/osodevops/akka-openapi-maven-plugin/compare/v1.5.1...v1.5.2) (2026-06-15)
 
 
