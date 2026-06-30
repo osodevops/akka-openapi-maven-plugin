@@ -2311,7 +2311,16 @@ public class SchemaGenerator {
         Map<String, Schema<?>> result = new LinkedHashMap<>(generatedSchemas);
         // Build a map of removed name → canonical replacement name for ref rewriting
         Map<String, String> replacements = new LinkedHashMap<>();
+        Map<String, String> componentRenames = new LinkedHashMap<>();
         List<String> toRemove = new ArrayList<>();
+        Map<String, Integer> numericSuffixCounts = new LinkedHashMap<>();
+
+        for (String name : result.keySet()) {
+            String baseName = stripNumericSuffix(name);
+            if (baseName != null) {
+                numericSuffixCounts.merge(baseName, 1, Integer::sum);
+            }
+        }
 
         for (String name : result.keySet()) {
             if (name.endsWith("-nullable")) {
@@ -2328,14 +2337,27 @@ public class SchemaGenerator {
                 // Internal framework types are silently dropped
             } else {
                 String baseName = stripNumericSuffix(name);
-                if (baseName != null && result.containsKey(baseName)) {
-                    toRemove.add(name);
-                    replacements.put(name, baseName);
+                if (baseName != null) {
+                    if (result.containsKey(baseName)) {
+                        toRemove.add(name);
+                        replacements.put(name, baseName);
+                    } else if (classRegistry.containsKey(baseName)
+                            && numericSuffixCounts.getOrDefault(baseName, 0) == 1) {
+                        componentRenames.put(name, baseName);
+                        replacements.put(name, baseName);
+                    }
                 }
             }
         }
 
         toRemove.forEach(result::remove);
+        if (!componentRenames.isEmpty()) {
+            Map<String, Schema<?>> renamed = new LinkedHashMap<>();
+            result.forEach((name, schema) ->
+                renamed.put(componentRenames.getOrDefault(name, name), schema));
+            result.clear();
+            result.putAll(renamed);
+        }
 
         // Also include all schemaNameAliases entries so that refs to numbered names that were
         // never added to generatedSchemas (skipped by dedup) still get rewritten correctly.
@@ -2757,7 +2779,7 @@ public class SchemaGenerator {
     public void clearSchemas() {
         generatedSchemas.clear();
         schemaNameAliases.clear();
-        classesPerSimpleName.clear();
+        classRegistry.clear();
         resolvedSchemaNames.clear();
         lastSchemaNameReplacements.clear();
     }

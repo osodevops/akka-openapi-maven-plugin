@@ -879,6 +879,29 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    void shouldKeepConcreteSubtypeFieldRefRegardlessOfParentGenerationOrder() {
+        SchemaGenerator subtypeFirst = new SchemaGenerator(logMessages::add);
+        subtypeFirst.generateSchema(CircleShipment.class);
+
+        SchemaGenerator parentFirst = new SchemaGenerator(logMessages::add);
+        parentFirst.generateSchema(Shape.class);
+        parentFirst.generateSchema(CircleShipment.class);
+
+        assertCircleShipmentReferencesConcreteCircle(subtypeFirst.getGeneratedSchemas());
+        assertCircleShipmentReferencesConcreteCircle(parentFirst.getGeneratedSchemas());
+    }
+
+    private void assertCircleShipmentReferencesConcreteCircle(Map<String, Schema<?>> schemas) {
+        Schema<?> circleProperty = schemas.get("CircleShipment").getProperties().get("circle");
+
+        assertThat(schemas).containsKey("Circle");
+        assertThat(schemas).doesNotContainKey("Circle-1");
+        assertThat(circleProperty.getAnyOf()).isNull();
+        assertThat(circleProperty.getOneOf()).isNull();
+        assertThat(circleProperty.get$ref()).isEqualTo("#/components/schemas/Circle");
+    }
+
+    @Test
     void shouldStoreCorrectPropertiesForQualifiedInnerRecordSchemas() {
         generator.generateSchema(ReportsResponse.class);
 
